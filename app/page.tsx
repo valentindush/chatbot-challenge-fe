@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Message } from "@/lib/@types"
 
 export default function Chat() {
@@ -16,22 +15,25 @@ export default function Chat() {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
+      setTimeout(() => {
+        scrollAreaRef.current!.scrollTo({
+          top: scrollAreaRef.current!.scrollHeight,
+          behavior: "smooth",
+        });
+      }, 0); 
     }
-  }, [messages]) 
+  }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
   
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       content: input.trim(),
       role: "user",
     };
     
-    // Add temporary assistant message
     const tempAssistantId = `temp-${Date.now()}`;
     const assistantMessage: Message = {
       id: tempAssistantId,
@@ -60,7 +62,6 @@ export default function Chat() {
         if (done) break;
         content += decoder.decode(value, { stream: true });
         
-        // Update the temporary assistant message
         setMessages((prev) => {
           const newMessages = prev.map(msg => {
             if (msg.id === tempAssistantId) {
@@ -72,7 +73,6 @@ export default function Chat() {
         });
       }
 
-      // Replace temporary ID with permanent ID
       setMessages(prev => 
         prev.map(msg => 
           msg.id === tempAssistantId 
@@ -103,7 +103,10 @@ export default function Chat() {
           <h2 className="text-xs font-medium">Ask me anything!</h2>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[60vh] pr-4" ref={scrollAreaRef}>
+          <div
+            ref={scrollAreaRef}
+            className="h-[60vh] pr-4 overflow-y-auto"
+          >
             {messages.map((m) => (
               <div key={m.id} className={`mb-4 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`flex items-end ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
@@ -128,7 +131,7 @@ export default function Chat() {
                 </div>
               </div>
             )}
-          </ScrollArea>
+          </div>
         </CardContent>
         <CardFooter>
           <form onSubmit={handleSubmit} className="flex w-full space-x-2">
