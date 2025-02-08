@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Message } from "@/lib/@types"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import rehypeHighlight from "rehype-highlight"
 
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -20,48 +23,48 @@ export default function Chat() {
           top: scrollAreaRef.current!.scrollHeight,
           behavior: "smooth",
         });
-      }, 0); 
+      }, 0);
     }
   }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-  
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content: input.trim(),
       role: "user",
     };
-    
+
     const tempAssistantId = `temp-${Date.now()}`;
     const assistantMessage: Message = {
       id: tempAssistantId,
       content: "",
       role: "assistant",
     };
-    
+
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
     setInput("");
     setIsLoading(true);
-  
+
     try {
       const response = await fetch("http://localhost:8000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: input.trim() }),
       });
-      
+
       if (!response.body) throw new Error("No response body");
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let content = "";
-      
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         content += decoder.decode(value, { stream: true });
-        
+
         setMessages((prev) => {
           const newMessages = prev.map(msg => {
             if (msg.id === tempAssistantId) {
@@ -73,20 +76,20 @@ export default function Chat() {
         });
       }
 
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === tempAssistantId 
-            ? { ...msg, id: Date.now().toString() } 
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === tempAssistantId
+            ? { ...msg, id: Date.now().toString() }
             : msg
         )
       );
-      
+
     } catch (error) {
       console.error("Error fetching AI response:", error);
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === tempAssistantId 
-            ? { ...msg, content: "Error generating response." } 
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === tempAssistantId
+            ? { ...msg, content: "Error generating response." }
             : msg
         )
       );
@@ -94,7 +97,7 @@ export default function Chat() {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
       <Card className="w-full max-w-2xl">
@@ -116,7 +119,13 @@ export default function Chat() {
                   <div
                     className={`mx-2 rounded-lg p-3 ${m.role === "user" ? "bg-blue-500 text-white" : "bg-gray-200 text-black"}`}
                   >
-                    {m.content}
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeHighlight]}
+                      className="prose"
+                    >
+                      {m.content}
+                    </ReactMarkdown>
                   </div>
                 </div>
               </div>
