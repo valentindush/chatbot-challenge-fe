@@ -4,5 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: chabot-fe
+    env_file:
+      - .env.local
     ports:
       - "3000:3000"
