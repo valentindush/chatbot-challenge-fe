@@ -1,0 +1,8 @@
+services:
+  chatbot-fe:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: chabot-fe
+    ports:
+      - "3003:3000"
